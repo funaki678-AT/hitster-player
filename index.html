@@ -4,6 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Hitster Player</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Hitster" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -212,6 +217,9 @@
       <button class="btn btn-secondary" onclick="seek(10)" title="+10 Sek">⏩</button>
     </div>
     <div class="status" id="status"></div>
+    <button id="btn-tap-to-play" class="btn-login hidden" onclick="tapToPlay()" style="margin-top:16px; width:100%;">
+      ▶ Tippen zum Abspielen
+    </button>
   </div>
 
   <!-- Fehler-Ansicht -->
@@ -499,18 +507,48 @@ async function main() {
     await initPlayer(token);
 
     // Song abspielen
-    document.getElementById("status").textContent = "Lade Song …";
-    await playTrack(token, trackId);
-    await fetchTrackInfo(token, trackId);
-
     show("view-player");
-    document.getElementById("status").textContent = "";
+    document.getElementById("status").textContent = "Lade Song …";
+
+    const isPWA = window.matchMedia("(display-mode: standalone)").matches
+               || window.navigator.standalone === true;
+
+    try {
+      await playTrack(token, trackId);
+      await fetchTrackInfo(token, trackId);
+      document.getElementById("status").textContent = "";
+    } catch (playErr) {
+      // Autoplay blockiert → Tap-to-Play anzeigen
+      pendingTrackId = trackId;
+      pendingToken   = token;
+      await fetchTrackInfo(token, trackId);
+      document.getElementById("status").textContent = "";
+      document.getElementById("btn-tap-to-play").classList.remove("hidden");
+    }
 
   } catch (err) {
     console.error(err);
     document.getElementById("error-msg").textContent = err.message;
     show("view-error");
   }
+}
+
+// ── Service Worker registrieren ───────────────────────────────────────────────
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js").catch(console.error);
+}
+
+// ── Tap-to-Play Fallback ──────────────────────────────────────────────────────
+let pendingTrackId = null;
+let pendingToken   = null;
+
+async function tapToPlay() {
+  if (!pendingTrackId || !pendingToken) return;
+  document.getElementById("btn-tap-to-play").classList.add("hidden");
+  document.getElementById("status").textContent = "Starte …";
+  await playTrack(pendingToken, pendingTrackId);
+  await fetchTrackInfo(pendingToken, pendingTrackId);
+  document.getElementById("status").textContent = "";
 }
 
 main();
