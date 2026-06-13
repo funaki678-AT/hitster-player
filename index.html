@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Hitster Player</title>
   <link rel="manifest" href="manifest.json" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -20,6 +20,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
     }
 
     .card {
@@ -40,6 +41,43 @@
       font-weight: 700;
     }
 
+    /* ── Scanner ── */
+    .scanner-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #000;
+      margin-bottom: 16px;
+    }
+    #camera-video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .scan-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+    .scan-frame {
+      width: 65%;
+      aspect-ratio: 1;
+      border: 3px solid #1DB954;
+      border-radius: 12px;
+      box-shadow: 0 0 0 9999px rgba(0,0,0,0.45);
+    }
+    .scan-hint {
+      font-size: 13px;
+      color: #b3b3b3;
+      margin-bottom: 16px;
+    }
+
+    /* ── Album Art ── */
     .album-art {
       width: 200px;
       height: 200px;
@@ -60,13 +98,11 @@
       margin-bottom: 6px;
       line-height: 1.3;
     }
-
     .artist-name {
       font-size: 14px;
       color: #b3b3b3;
       margin-bottom: 4px;
     }
-
     .year-badge {
       display: inline-block;
       background: #1DB954;
@@ -78,6 +114,7 @@
       margin-top: 8px;
     }
 
+    /* ── Fortschritt ── */
     .progress-wrap {
       margin: 24px 0 12px;
       background: #404040;
@@ -91,7 +128,6 @@
       width: 0%;
       transition: width 0.5s linear;
     }
-
     .time-row {
       display: flex;
       justify-content: space-between;
@@ -100,13 +136,13 @@
       margin-bottom: 20px;
     }
 
+    /* ── Buttons ── */
     .controls {
       display: flex;
       gap: 16px;
       justify-content: center;
       align-items: center;
     }
-
     .btn {
       border: none;
       cursor: pointer;
@@ -114,45 +150,34 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: transform 0.1s, opacity 0.2s;
+      transition: transform 0.1s;
     }
-    .btn:hover { transform: scale(1.08); }
+    .btn:hover  { transform: scale(1.08); }
     .btn:active { transform: scale(0.95); }
-
     .btn-play {
       background: #1DB954;
-      width: 60px;
-      height: 60px;
+      width: 60px; height: 60px;
       font-size: 24px;
     }
-
     .btn-secondary {
       background: #404040;
-      width: 44px;
-      height: 44px;
+      width: 44px; height: 44px;
       font-size: 18px;
     }
-
-    .status {
+    .btn-scan-again {
       margin-top: 20px;
-      font-size: 13px;
-      color: #b3b3b3;
-      min-height: 20px;
-    }
-
-    .login-section {
-      text-align: center;
-    }
-    .login-section h2 {
-      font-size: 22px;
-      margin-bottom: 10px;
-    }
-    .login-section p {
-      color: #b3b3b3;
+      background: #404040;
+      color: white;
+      border: none;
+      border-radius: 30px;
+      padding: 10px 24px;
       font-size: 14px;
-      margin-bottom: 28px;
-      line-height: 1.5;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
     }
+    .btn-scan-again:hover { background: #505050; }
+
     .btn-login {
       background: #1DB954;
       color: white;
@@ -162,10 +187,20 @@
       font-size: 15px;
       font-weight: 700;
       cursor: pointer;
-      letter-spacing: 0.5px;
       transition: background 0.2s, transform 0.1s;
+      width: 100%;
     }
     .btn-login:hover { background: #1ed760; transform: scale(1.04); }
+
+    .status {
+      margin-top: 16px;
+      font-size: 13px;
+      color: #b3b3b3;
+      min-height: 20px;
+    }
+
+    .login-section h2 { font-size: 22px; margin-bottom: 10px; }
+    .login-section p  { color: #b3b3b3; font-size: 14px; margin-bottom: 28px; line-height: 1.5; }
 
     .error-box {
       background: #3d1515;
@@ -184,22 +219,32 @@
 <div class="card">
   <div class="logo">🎵 Hitster</div>
 
-  <!-- Login-Ansicht -->
+  <!-- Login -->
   <div id="view-login" class="login-section hidden">
     <h2>Mit Spotify anmelden</h2>
     <p>Du brauchst einen <strong>Spotify Premium</strong> Account um Lieder abspielen zu können.</p>
     <button class="btn-login" onclick="startLogin()">Mit Spotify anmelden</button>
   </div>
 
-  <!-- Lade-Ansicht -->
+  <!-- Laden -->
   <div id="view-loading" class="hidden">
-    <p style="color:#b3b3b3; margin-top:40px;">⏳ Verbinde …</p>
+    <p style="color:#b3b3b3; margin: 40px 0;">⏳ <span id="loading-msg">Verbinde …</span></p>
   </div>
 
-  <!-- Player-Ansicht -->
+  <!-- Scanner -->
+  <div id="view-scanner" class="hidden">
+    <div class="scanner-wrap">
+      <video id="camera-video" autoplay playsinline muted></video>
+      <canvas id="scan-canvas" style="display:none"></canvas>
+      <div class="scan-overlay"><div class="scan-frame"></div></div>
+    </div>
+    <p class="scan-hint">Halte die Kamera auf einen Hitster QR-Code</p>
+  </div>
+
+  <!-- Player -->
   <div id="view-player" class="hidden">
     <div class="album-art" id="album-art">🎵</div>
-    <div class="track-name" id="track-name">–</div>
+    <div class="track-name"  id="track-name">–</div>
     <div class="artist-name" id="artist-name">–</div>
     <div id="year-badge" class="year-badge hidden">–</div>
 
@@ -210,29 +255,30 @@
       <span id="time-current">0:00</span>
       <span id="time-total">0:00</span>
     </div>
-
     <div class="controls">
-      <button class="btn btn-secondary" onclick="seek(-10)" title="−10 Sek">⏪</button>
+      <button class="btn btn-secondary" onclick="seek(-10)">⏪</button>
       <button class="btn btn-play" id="btn-play" onclick="togglePlay()">▶</button>
-      <button class="btn btn-secondary" onclick="seek(10)" title="+10 Sek">⏩</button>
+      <button class="btn btn-secondary" onclick="seek(10)">⏩</button>
     </div>
+    <button class="btn-scan-again" onclick="startScanner()">📷 Nächste Karte scannen</button>
     <div class="status" id="status"></div>
-    <button id="btn-tap-to-play" class="btn-login hidden" onclick="tapToPlay()" style="margin-top:16px; width:100%;">
-      ▶ Tippen zum Abspielen
-    </button>
   </div>
 
-  <!-- Fehler-Ansicht -->
+  <!-- Fehler -->
   <div id="view-error" class="error-box hidden">
-    Fehler: <span id="error-msg"></span>
+    <span id="error-msg"></span>
+    <br><br>
+    <button class="btn-login" onclick="location.reload()">Neu laden</button>
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 <script src="https://sdk.scdn.co/spotify-player.js"></script>
 <script>
 // ── Konfiguration ─────────────────────────────────────────────────────────────
-const CLIENT_ID   = "5839ffa0907243398d394ddb8b1f6acd";
+const CLIENT_ID    = "5839ffa0907243398d394ddb8b1f6acd";
 const REDIRECT_URI = "https://funaki678-AT.github.io/hitster-player/";
+const PLAYER_BASE  = "https://funaki678-AT.github.io/hitster-player/";
 const SCOPES = [
   "streaming",
   "user-read-email",
@@ -242,18 +288,17 @@ const SCOPES = [
 
 // ── Hilfsfunktionen ───────────────────────────────────────────────────────────
 function show(id) {
-  ["view-login","view-loading","view-player","view-error"]
+  ["view-login","view-loading","view-scanner","view-player","view-error"]
     .forEach(v => document.getElementById(v).classList.add("hidden"));
   document.getElementById(id).classList.remove("hidden");
 }
-
 function formatTime(ms) {
   const s = Math.floor(ms / 1000);
-  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2,"0")}`;
+  return `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`;
 }
-
-function getParam(name) {
-  return new URLSearchParams(window.location.search).get(name);
+function setLoading(msg) {
+  document.getElementById("loading-msg").textContent = msg;
+  show("view-loading");
 }
 
 // ── PKCE ──────────────────────────────────────────────────────────────────────
@@ -268,69 +313,50 @@ async function pkce() {
   ));
   return { verifier, challenge };
 }
-
 async function startLogin() {
-  const trackId = getParam("track");
-  if (trackId) sessionStorage.setItem("pending_track", trackId);
-
   const { verifier, challenge } = await pkce();
   sessionStorage.setItem("pkce_verifier", verifier);
-
   const params = new URLSearchParams({
-    client_id:             CLIENT_ID,
-    response_type:         "code",
-    redirect_uri:          REDIRECT_URI,
-    scope:                 SCOPES,
-    code_challenge_method: "S256",
-    code_challenge:        challenge,
+    client_id: CLIENT_ID, response_type: "code",
+    redirect_uri: REDIRECT_URI, scope: SCOPES,
+    code_challenge_method: "S256", code_challenge: challenge,
   });
   window.location = "https://accounts.spotify.com/authorize?" + params;
 }
-
 async function exchangeCode(code) {
-  const verifier = sessionStorage.getItem("pkce_verifier");
   const res = await fetch("https://accounts.spotify.com/api/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
-      client_id:     CLIENT_ID,
-      grant_type:    "authorization_code",
-      code,
-      redirect_uri:  REDIRECT_URI,
-      code_verifier: verifier,
+      client_id: CLIENT_ID, grant_type: "authorization_code",
+      code, redirect_uri: REDIRECT_URI,
+      code_verifier: sessionStorage.getItem("pkce_verifier"),
     }),
   });
   const data = await res.json();
   if (data.error) throw new Error(data.error_description || data.error);
   return data;
 }
-
 async function refreshToken(refresh) {
   const res = await fetch("https://accounts.spotify.com/api/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
-      client_id:     CLIENT_ID,
-      grant_type:    "refresh_token",
-      refresh_token: refresh,
+      client_id: CLIENT_ID, grant_type: "refresh_token", refresh_token: refresh,
     }),
   });
   const data = await res.json();
   if (data.error) throw new Error(data.error_description || data.error);
   return data;
 }
-
 function saveTokens(data) {
   localStorage.setItem("access_token",  data.access_token);
   localStorage.setItem("refresh_token", data.refresh_token || localStorage.getItem("refresh_token"));
   localStorage.setItem("token_expiry",  Date.now() + data.expires_in * 1000);
 }
-
 async function getValidToken() {
   const expiry = parseInt(localStorage.getItem("token_expiry") || "0");
-  if (Date.now() < expiry - 60000) {
-    return localStorage.getItem("access_token");
-  }
+  if (Date.now() < expiry - 60000) return localStorage.getItem("access_token");
   const refresh = localStorage.getItem("refresh_token");
   if (!refresh) return null;
   const data = await refreshToken(refresh);
@@ -338,87 +364,56 @@ async function getValidToken() {
   return data.access_token;
 }
 
-// ── Spotify Web Playback SDK ──────────────────────────────────────────────────
-let player = null;
-let deviceId = null;
-let isPlaying = false;
-let progressInterval = null;
-let currentPosition = 0;
-let currentDuration = 1;
-
-let spotifySDKReady = false;
-let spotifySDKResolve = null;
+// ── Spotify SDK ───────────────────────────────────────────────────────────────
+let player = null, deviceId = null, isPlaying = false;
+let progressInterval = null, currentPosition = 0, currentDuration = 1;
+let sdkReady = false, sdkResolve = null;
 
 window.onSpotifyWebPlaybackSDKReady = () => {
-  spotifySDKReady = true;
-  if (spotifySDKResolve) spotifySDKResolve();
+  sdkReady = true;
+  if (sdkResolve) sdkResolve();
 };
-
 function waitForSDK() {
-  if (spotifySDKReady) return Promise.resolve();
-  return new Promise(resolve => { spotifySDKResolve = resolve; });
+  return sdkReady ? Promise.resolve() : new Promise(r => { sdkResolve = r; });
 }
 
 async function initPlayer(token) {
+  if (player) return; // bereits initialisiert
+  await waitForSDK();
   return new Promise((resolve, reject) => {
     player = new Spotify.Player({
       name: "Hitster Player",
-      getOAuthToken: cb => cb(token),
+      getOAuthToken: cb => getValidToken().then(cb),
       volume: 0.8,
     });
-
-    player.addListener("ready", ({ device_id }) => {
-      deviceId = device_id;
-      console.log("Player bereit, Device:", device_id);
-      resolve();
-    });
-
-    player.addListener("not_ready", () => console.warn("Player nicht bereit"));
-
-    player.addListener("player_state_changed", state => {
-      if (!state) return;
-      const track = state.track_window.current_track;
-      updateUI(track, state);
-    });
-
-    player.addListener("initialization_error", e => reject(new Error("Initialisierung fehlgeschlagen: " + e.message)));
-    player.addListener("authentication_error", e => reject(new Error("Authentifizierung fehlgeschlagen: " + e.message)));
-    player.addListener("account_error",        e => reject(new Error("Spotify Premium erforderlich.")));
-
+    player.addListener("ready", ({ device_id }) => { deviceId = device_id; resolve(); });
+    player.addListener("player_state_changed", state => { if (state) updateUI(state); });
+    player.addListener("initialization_error", e => reject(new Error(e.message)));
+    player.addListener("authentication_error", e => reject(new Error("Bitte neu anmelden.")));
+    player.addListener("account_error",        () => reject(new Error("Spotify Premium erforderlich.")));
     player.connect();
   });
 }
 
-function updateUI(track, state) {
+function updateUI(state) {
+  const track = state.track_window?.current_track;
   if (!track) return;
-
   document.getElementById("track-name").textContent  = track.name;
   document.getElementById("artist-name").textContent = track.artists.map(a => a.name).join(", ");
-
   const art = document.getElementById("album-art");
   const img = track.album?.images?.[0]?.url;
   art.innerHTML = img ? `<img src="${img}" alt="Cover">` : "🎵";
-
-  const playBtn = document.getElementById("btn-play");
   isPlaying = !state.paused;
-  playBtn.textContent = isPlaying ? "⏸" : "▶";
-
+  document.getElementById("btn-play").textContent = isPlaying ? "⏸" : "▶";
   currentDuration = state.duration;
   currentPosition = state.position;
   updateProgress();
-
   clearInterval(progressInterval);
-  if (isPlaying) {
-    progressInterval = setInterval(() => {
-      currentPosition += 500;
-      updateProgress();
-    }, 500);
-  }
+  if (isPlaying) progressInterval = setInterval(() => { currentPosition += 500; updateProgress(); }, 500);
 }
 
 function updateProgress() {
-  const pct = Math.min(100, (currentPosition / currentDuration) * 100);
-  document.getElementById("progress-bar").style.width = pct + "%";
+  document.getElementById("progress-bar").style.width = Math.min(100, currentPosition/currentDuration*100) + "%";
   document.getElementById("time-current").textContent = formatTime(currentPosition);
   document.getElementById("time-total").textContent   = formatTime(currentDuration);
 }
@@ -426,129 +421,138 @@ function updateProgress() {
 async function playTrack(token, trackId) {
   await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
     method: "PUT",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      uris:           [`spotify:track:${trackId}`],
-      position_ms:    0,
-    }),
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ uris: [`spotify:track:${trackId}`], position_ms: 0 }),
   });
-}
-
-async function togglePlay() {
-  if (!player) return;
-  await player.togglePlay();
-}
-
-async function seek(seconds) {
-  if (!player) return;
-  const state = await player.getCurrentState();
-  if (!state) return;
-  const newPos = Math.max(0, state.position + seconds * 1000);
-  await player.seek(newPos);
 }
 
 async function fetchTrackInfo(token, trackId) {
-  const res  = await fetch(`https://api.spotify.com/v1/tracks/${trackId}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const res  = await fetch(`https://api.spotify.com/v1/tracks/${trackId}`,
+    { headers: { Authorization: `Bearer ${token}` } });
   const data = await res.json();
   const year = data.album?.release_date?.slice(0,4);
-  if (year) {
-    const badge = document.getElementById("year-badge");
-    badge.textContent = year;
-    badge.classList.remove("hidden");
+  const badge = document.getElementById("year-badge");
+  if (year) { badge.textContent = year; badge.classList.remove("hidden"); }
+  else badge.classList.add("hidden");
+}
+
+async function togglePlay() { if (player) await player.togglePlay(); }
+async function seek(s) {
+  if (!player) return;
+  const state = await player.getCurrentState();
+  if (state) await player.seek(Math.max(0, state.position + s * 1000));
+}
+
+// ── QR-Scanner ────────────────────────────────────────────────────────────────
+let scanInterval = null;
+let cameraStream = null;
+
+async function startScanner() {
+  show("view-scanner");
+  document.getElementById("year-badge").classList.add("hidden");
+
+  if (cameraStream) {
+    cameraStream.getTracks().forEach(t => t.stop());
+  }
+
+  try {
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "environment" }
+    });
+    const video = document.getElementById("camera-video");
+    video.srcObject = cameraStream;
+    await video.play();
+    scanInterval = setInterval(scanFrame, 200);
+  } catch (e) {
+    showError("Kamera konnte nicht gestartet werden: " + e.message);
   }
 }
 
-// ── Hauptprogramm ─────────────────────────────────────────────────────────────
+function stopScanner() {
+  clearInterval(scanInterval);
+  scanInterval = null;
+  if (cameraStream) {
+    cameraStream.getTracks().forEach(t => t.stop());
+    cameraStream = null;
+  }
+}
+
+function scanFrame() {
+  const video  = document.getElementById("camera-video");
+  const canvas = document.getElementById("scan-canvas");
+  if (video.readyState !== video.HAVE_ENOUGH_DATA) return;
+
+  canvas.width  = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(video, 0, 0);
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const code = jsQR(imageData.data, imageData.width, imageData.height);
+
+  if (code) {
+    const url = code.data;
+    // Prüfe ob es eine Hitster Player URL ist
+    const match = url.match(/[?&]track=([a-zA-Z0-9]+)/);
+    if (match) {
+      stopScanner();
+      handleTrack(match[1]);
+    }
+  }
+}
+
+// ── Track abspielen ───────────────────────────────────────────────────────────
+async function handleTrack(trackId) {
+  try {
+    setLoading("Lade Song …");
+    const token = await getValidToken();
+    await playTrack(token, trackId);
+    await fetchTrackInfo(token, trackId);
+    show("view-player");
+  } catch (e) {
+    showError(e.message);
+  }
+}
+
+// ── Fehler ────────────────────────────────────────────────────────────────────
+function showError(msg) {
+  document.getElementById("error-msg").textContent = msg;
+  show("view-error");
+}
+
+// ── Start ─────────────────────────────────────────────────────────────────────
 async function main() {
   const urlParams = new URLSearchParams(window.location.search);
   const code      = urlParams.get("code");
-  const trackId   = urlParams.get("track") || sessionStorage.getItem("pending_track");
 
   try {
-    // OAuth-Callback: Code gegen Token tauschen
+    // OAuth Callback
     if (code) {
-      show("view-loading");
+      setLoading("Verbinde mit Spotify …");
       const data = await exchangeCode(code);
       saveTokens(data);
       sessionStorage.removeItem("pkce_verifier");
-      // URL bereinigen
-      const clean = window.location.origin + window.location.pathname
-        + (trackId ? `?track=${trackId}` : "");
-      window.history.replaceState({}, "", clean);
-      sessionStorage.removeItem("pending_track");
+      window.history.replaceState({}, "", REDIRECT_URI);
     }
 
-    // Token holen
+    // Token prüfen
     const token = await getValidToken();
-    if (!token) {
-      show("view-login");
-      return;
-    }
+    if (!token) { show("view-login"); return; }
 
-    // Kein Track angegeben
-    if (!trackId) {
-      show("view-login");
-      document.querySelector(".login-section p").textContent =
-        "Scanne einen Hitster QR-Code um ein Lied zu starten.";
-      document.querySelector(".btn-login").style.display = "none";
-      return;
-    }
-
-    show("view-loading");
-
-    // Player initialisieren
-    document.getElementById("status").textContent = "Verbinde mit Spotify …";
-    await waitForSDK();
+    // Spotify Player initialisieren (im Hintergrund)
+    setLoading("Verbinde mit Spotify …");
     await initPlayer(token);
 
-    // Song abspielen
-    show("view-player");
-    document.getElementById("status").textContent = "Lade Song …";
+    // Scanner starten
+    await startScanner();
 
-    const isPWA = window.matchMedia("(display-mode: standalone)").matches
-               || window.navigator.standalone === true;
-
-    try {
-      await playTrack(token, trackId);
-      await fetchTrackInfo(token, trackId);
-      document.getElementById("status").textContent = "";
-    } catch (playErr) {
-      // Autoplay blockiert → Tap-to-Play anzeigen
-      pendingTrackId = trackId;
-      pendingToken   = token;
-      await fetchTrackInfo(token, trackId);
-      document.getElementById("status").textContent = "";
-      document.getElementById("btn-tap-to-play").classList.remove("hidden");
-    }
-
-  } catch (err) {
-    console.error(err);
-    document.getElementById("error-msg").textContent = err.message;
-    show("view-error");
+  } catch (e) {
+    showError(e.message);
   }
 }
 
-// ── Service Worker registrieren ───────────────────────────────────────────────
+// Service Worker
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("sw.js").catch(console.error);
-}
-
-// ── Tap-to-Play Fallback ──────────────────────────────────────────────────────
-let pendingTrackId = null;
-let pendingToken   = null;
-
-async function tapToPlay() {
-  if (!pendingTrackId || !pendingToken) return;
-  document.getElementById("btn-tap-to-play").classList.add("hidden");
-  document.getElementById("status").textContent = "Starte …";
-  await playTrack(pendingToken, pendingTrackId);
-  await fetchTrackInfo(pendingToken, pendingTrackId);
-  document.getElementById("status").textContent = "";
 }
 
 main();
